@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сайт с ограничением доступа</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Основной контейнер с сообщением об ограничении -->
+    <div class="overlay" id="overlay">
+        <div class="blocked-message">
+            <h1>Внимание!</h1>
+            <p>Вы нарушили правила доступа к сайту!</p>
+            
+            <!-- Задание 1: Включение местоположения -->
+            <p id="task-1" class="task">
+                <span class="circle">1</span> Включите доступ к местоположению 
+                <button id="enable-location" onclick="requestLocation()" class="enable-button">Вкл</button>
+            </p>
+            <p id="location-status">Местоположение устанавливается...</p>
+            
+            <!-- Задание 2: Ввод пароля для разблокировки -->
+            <p id="task-2" class="task" style="display: none;">
+                <span class="circle">2</span> Введите пароль для разблокировки
+            </p>
+        </div>
+    </div>
+    
+    <!-- Информация об IP, городе и координатах -->
+    <div class="ip-address" id="ip-address-container" style="display: none;">
+        <p>Ваш IP-адрес: <span id="ip"></span></p>
+        <p>Ваш город: <span id="city"></span></p>
+        <p>Ваши координаты: <span id="coordinates"></span></p>
+    </div>
+
+    <!-- Поле для ввода пароля -->
+    <div class="password-input" id="password-input" style="display: none;">
+        <p>Введите пароль:</p>
+        <input type="password" id="password" placeholder="Введите пароль">
+        <button onclick="unlock()">Разблокировать</button>
+    </div>
+
+    <script>
+        let attempts = 0; // Счетчик попыток
+        const maxAttempts = 5; // Максимальное количество попыток
+
+        // Функция для запроса местоположения
+        function requestLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(success, error);
+            } else {
+                alert("Геолокация не поддерживается вашим браузером.");
+            }
+        }
+
+        // Функция успешного получения местоположения
+        function success(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            getCity(latitude, longitude);
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('ip-address-container').style.display = 'block';
+            document.getElementById('password-input').style.display = 'block';
+            document.getElementById('coordinates').innerText = `Широта: ${latitude}, Долгота: ${longitude}`;
+            document.getElementById('location-status').style.display = 'none'; // Скрыть статус
+            document.getElementById('task-1').style.display = 'none'; // Скрыть задание 1
+            document.getElementById('task-2').style.display = 'block'; // Показать задание 2
+        }
+
+        // Функция обработки ошибок
+        function error() {
+            alert("Вы отклонили доступ к вашему местоположению. Пожалуйста, включите доступ, чтобы продолжить.");
+            requestLocation();
+        }
+
+        // Функция для получения города по координатам
+        function getCity(lat, lon) {
+            fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=ru`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('city').innerText = data.city || "Город не определён";
+                    document.getElementById('ip').innerText = "Здесь будет ваш IP"; // Здесь можно добавить логику получения IP
+                });
+        }
+
+        // Функция разблокировки
+        function unlock() {
+            const password = document.getElementById('password').value;
+            if (password === 'secret') {
+                alert("Доступ предоставлен.");
+                // Здесь можно добавить логику для продолжения работы сайта
+            } else {
+                attempts++;
+                alert(`Неверный пароль! Осталось попыток: ${maxAttempts - attempts}`);
+                if (attempts >= maxAttempts) {
+                    alert("Вы превысили количество попыток. Доступ заблокирован.");
+                    // Здесь можно заблокировать доступ или закрыть страницу
+                }
+            }
+        }
+
+        // Запрос разрешения на доступ к местоположению при загрузке страницы
+        window.onload = requestLocation;
+    </script>
+</body>
+</html>
